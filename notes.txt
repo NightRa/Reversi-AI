@@ -1,0 +1,29 @@
+Board queries:
+    Piece at position (i,j)
+    Given 2 boards, return the difference.
+    Number of black pieces
+    Number of white pieces
+    Is (i,j) a valid move for the player?
+    Number of valid moves for white and black
+    Place piece at (i,j)
+
+    * Number of corners captured by white and black
+    * Number of edges captured by white and black
+
+Heuristic:
+1. Pieces
+2. Corners
+3. Mobility
+4. Stability - Stable / Half - stable / Not stable
+
+UX - User experience:
+1. UI - user interface
+2. API: Clicked on square -> Update state.
+3. File communication
+4. Computer vs Human
+5. Computer vs Computer
+
+
+AI:
+1. Minimax
+2. Alpha-beta pruning
