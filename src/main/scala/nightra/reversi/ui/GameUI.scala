@@ -1,7 +1,7 @@
 package nightra.reversi.ui
 
 import nightra.reversi.ai.{AlphaBeta, Heuristic, Minimax}
-import nightra.reversi.model.{Player, Position, SquareState, Board}
+import nightra.reversi.model._
 
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.Scene
@@ -46,7 +46,7 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
           case None => ()
           case Some(newBoard) =>
             boardProp.value = newBoard
-            AlphaBeta.alphaBeta(newBoard)(Heuristic.heuristic)(Board.generator, _._2, (board,max) => board.setTurn(Player.fromMax(max)))(_.isTerminal, _.winner.map(_.isMax))(false)(5) match {
+            AlphaBeta.alphaBeta[Board,(Move,Board)](newBoard)(Heuristic.heuristic)(Board.generator, _._2, (board,max) => board.setTurn(Player.fromMax(max)))(_.isTerminal, _.winner.map(_.isMax))(false)(5) match {
               case (score, None) => println(s"The winner is: ${newBoard.winner}")
               case (score, Some((pos, computerMoveBoard))) =>
                 boardProp.value = computerMoveBoard

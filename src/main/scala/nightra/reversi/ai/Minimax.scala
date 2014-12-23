@@ -11,22 +11,22 @@ object Minimax {
   //            False => generate for the Min player.
   // heuristic: takes the current state, and the already calculated possible moves, for the given player.
   //            proof obligation: the calculated moves must equal generator(state,max)
-  def minimax[Board, Move](state: Board)(heuristic: (Board, Vector[Move], Boolean) => Float)(generator: (Board, Boolean) => Vector[Move], toBoard: Move => Board, setTurn: (Board, Boolean) => Board)(terminal: Board => Boolean, winner: Board => Option[Boolean])(max: Boolean)(depth: Int): (Float, Option[Move]) = {
+  def minimax[Board, Move](state: Board)(heuristic: Board => Float)(generator: (Board, Boolean) => Stream[Move], toBoard: Move => Board, setTurn: (Board, Boolean) => Board)(terminal: Board => Boolean, winner: Board => Option[Boolean])(max: Boolean)(depth: Int): (Float, Option[Move]) = {
     def go(state: Board, max: Boolean, stale: Boolean, depth: Int): (Float, Option[Move]) = {
       if (terminal(state)) {
         (endBoardValue(winner)(state), None)
       } else {
-        val possibleMoves: Vector[Move] = generator(state, max)
+        val possibleMoves: Stream[Move] = generator(state, max)
         if (stale && possibleMoves.isEmpty) (endBoardValue(winner)(state), None)
         else if (!stale && possibleMoves.isEmpty) go(setTurn(state, !max), !max, stale = true, depth)
         else if (depth == 0) {
           // !possibleMoves.isEmpty => can move.
-          (heuristic(state, possibleMoves, max), None)
+          (heuristic(state), None)
           // Heuristic requires no stale tie.
           // proof of correctness: open moves -> no stale tie possible.
         } else {
           // !possibleMoves.isEmpty
-          val childrenBoards: Vector[(Move, Float)] = possibleMoves.map(move => (move, go(toBoard(move), !max, stale = false, depth - 1)._1))
+          val childrenBoards: Stream[(Move, Float)] = possibleMoves.map(move => (move, go(toBoard(move), !max, stale = false, depth - 1)._1))
           // proposition: forall a,f: size(a.map(f)) = size(a)
           val (move, value) =
             if (max) {

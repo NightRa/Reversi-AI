@@ -1,5 +1,7 @@
 package nightra.reversi.util
 
+import scalaz.EphemeralStream
+
 trait UnfoldStep[+A]
 case class More[+A](a: A) extends UnfoldStep[A]
 case object Done extends UnfoldStep[Nothing]
@@ -70,4 +72,12 @@ object Collections {
   }
 
   def collect[A, B](vec: Vector[A])(f: A => Option[B]): Vector[B] = vec.collect(Function.unlift(f))
+  def collectStream[A, B](stream: => Stream[A])(f: A => Option[B]): Stream[B] = stream match {
+    case Stream.Empty => Stream.empty
+    case x #:: xs => f(x) match {
+      case None => collectStream(xs)(f)
+      case Some(b) => b #:: collectStream(xs)(f)
+    }
+  }
+
 }

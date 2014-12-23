@@ -1,6 +1,8 @@
 package nightra.reversi.ai
 
-import nightra.reversi.model.{Black, White, Position, Board}
+import nightra.reversi.model._
+
+import scalaz.EphemeralStream
 
 object Heuristic {
   // Positive = Max = Black
@@ -21,15 +23,8 @@ object Heuristic {
     else 100.0f * (blackCorners - whiteCorners) / (blackCorners + whiteCorners)
   }
 
-  def nextMoves(board: Board, alreadyOpened: Vector[(Position, Board)], maxOpened: Boolean): (Vector[(Position, Board)], Vector[(Position, Board)]) =
-    if (maxOpened)
-      (alreadyOpened, board.setTurn(White).possibleMoves)
-    else
-      (board.setTurn(Black).possibleMoves, alreadyOpened)
-
-  def heuristic(board: Board, alreadyOpened: Vector[(Position, Board)], maxOpened: Boolean): Float = {
-    val (blackOpen, whiteOpen) = nextMoves(board, alreadyOpened, maxOpened)
-    (countHeuristic(board) + mobilityHeuristic(blackOpen.size, whiteOpen.size) + cornersHeuristic(board)) / 3
+  def heuristic(board: Board): Float = {
+    (countHeuristic(board) + mobilityHeuristic(board.blackOpen, board.whiteOpen) + cornersHeuristic(board)) / 3
   }
 
 }

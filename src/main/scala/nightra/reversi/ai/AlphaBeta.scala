@@ -3,19 +3,19 @@ package nightra.reversi.ai
 import Minimax.endBoardValue
 
 object AlphaBeta {
-  def alphaBeta[Board, Move](state: Board)(heuristic: (Board, Vector[Move], Boolean) => Float)(generator: (Board, Boolean) => Vector[Move], toBoard: Move => Board, setTurn: (Board,Boolean) => Board)(terminal: Board => Boolean, winner: Board => Option[Boolean])(max: Boolean)(depth: Int): (Float, Option[Move]) = {
+  def alphaBeta[Board, Move](state: Board)(heuristic: Board => Float)(generator: (Board, Boolean) => Stream[Move], toBoard: Move => Board, setTurn: (Board,Boolean) => Board)(terminal: Board => Boolean, winner: Board => Option[Boolean])(max: Boolean)(depth: Int): (Float, Option[Move]) = {
     // Returns none iff bestMin <= bestMax
     def go(state: Board, max: Boolean, stale: Boolean, alpha: Float, beta: Float, depth: Int): (Float, Option[Move]) = {
       if (terminal(state)) {
         (endBoardValue(winner)(state), None)
       } else {
-        val possibleMoves: Vector[Move] = generator(state, max)
+        val possibleMoves: Stream[Move] = generator(state, max)
         if (stale && possibleMoves.isEmpty)
           (endBoardValue(winner)(state), None)
         else if (!stale && possibleMoves.isEmpty) go(setTurn(state,!max), !max, stale = true, alpha, beta, depth)
         else if (depth == 0) {
           // !possibleMoves.isEmpty => can move.
-          (heuristic(state, possibleMoves, max), None)
+          (heuristic(state), None)
           // Heuristic requires no stale tie.
           // proof of correctness: open moves -> no stale tie possible.
         } else {

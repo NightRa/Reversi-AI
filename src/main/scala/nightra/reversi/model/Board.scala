@@ -1,8 +1,11 @@
 package nightra.reversi.model
 
 import nightra.reversi.util.{More, Done, Terminate, Collections}
+import scalaz.EphemeralStream
+import scalaz.std.tuple._
+import scalaz.syntax.enum._
 
-case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: Int, pieces: Int, turn: Player) {
+case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: Int, pieces: Int, stale: Boolean, turn: Player) {
   def whites = pieces - blacks
 
   def at(pos: Position): Option[Piece] =
@@ -16,6 +19,8 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
   //                                   ^ unsafe
 
   def setTurn(player: Player) = this.copy(turn = player)
+
+  def passTurn: Board = setTurn(turn.opposite).copy(stale = true)
 
   // Proof obligation: inBounds(pos)
   // If valid move, return the board after placement and the flipped positions.
@@ -45,7 +50,7 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
           case Black => blacks + flipped.size + 1 // new black placed at pos
           case White => blacks - flipped.size
         }
-        Some(Board(placedMat, size, newBlacks, pieces + 1, turn.opposite))
+        Some(Board(placedMat, size, newBlacks, pieces + 1, stale = false, turn.opposite))
       }
     }
 
@@ -65,23 +70,37 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
       }
   }, start)
 
-  // returns a vector of: the taken move, and the new board.
-  def possibleMoves: Vector[(Position, Board)] = Collections.collect(Vector.tabulate(size * size)
-    (i => (Position.apply _).tupled(Collections.to2D(size, i))))(
-      pos => place(pos).map(board => (pos, board))
-    )
+  // returns a lazy Stream of: the taken move, and the new board.
+  lazy val possibleMoves: Stream[(Move, Board)] = {
+    val allPositions = Stream.tabulate(size*size)(i => Position.tupled(Collections.to2D(size, i)))
+    val openPositions = Collections.collectStream(allPositions)(pos => place(pos).map(board => (Place(pos): Move, board)))
+    if (!stale) (Pass, passTurn) #:: openPositions
+    else openPositions
+  }
 
   def mobilityBoard: Vector[Vector[SquareState]] = {
-    val open = possibleMoves.map(_._1).toSet
+    val open = Collections.collectStream(possibleMoves) { case (Place(pos), board) => Some(pos) case _ => None}.toList.toSet
     Vector.tabulate(size, size)((row, col) => if (open(Position(row, col))) OpenSquareState(turn) else mat(row)(col).squareState)
   }
 
-  def isTerminal: Boolean = pieces == size * size
+  lazy val blackOpen = turn match {
+    case Black => possibleMoves.size
+    case White => setTurn(Black).possibleMoves.size
+  }
+
+  lazy val whiteOpen = turn match{
+    case White => possibleMoves.size
+    case Black => setTurn(White).possibleMoves.size
+  }
+
+  def isTerminal: Boolean = {
+    pieces == size * size || possibleMoves.isEmpty
+  }
 
   def winner: Option[Player] =
-    if(blacks > whites)
+    if (blacks > whites)
       Some(Black)
-    else if(whites > blacks)
+    else if (whites > blacks)
       Some(White)
     else
       None
@@ -112,7 +131,7 @@ object Board {
           BlackPiece
         else
           EmptyPiece
-    }, size, 2, 4, Black)
+    }, size, 2, 4, stale = false, Black)
   }
 
   def lookaheadBoard(board: Board, pos: Position): Vector[Vector[SquareState]] = {
@@ -129,6 +148,6 @@ object Board {
     }
   }
 
-  def generator(board: Board, max: Boolean): Vector[(Position, Board)] = board.setTurn(if(max) Black else White).possibleMoves
+  def generator(board: Board, max: Boolean): Stream[(Move, Board)] = board.setTurn(if (max) Black else White).possibleMoves
 
 }
