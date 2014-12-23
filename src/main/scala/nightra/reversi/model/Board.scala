@@ -84,7 +84,7 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
   })
 
   // returns a lazy Stream of: the taken move, and the new board.
-  lazy val possibleMoves: Stream[(Move, Board)] = {
+  def possibleMoves: Stream[(Move, Board)] = {
     val allPositions = Stream.tabulate(size * size)(i => Position.tupled(Collections.to2D(size, i)))
     val openPositions = Collections.collectStream(allPositions)(pos => place(pos).map(board => (Place(pos): Move, board)))
     if (!stale && openPositions.isEmpty) Stream((Pass, passTurn))
@@ -96,14 +96,9 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
     Vector.tabulate(size, size)((row, col) => if (open(Position(row, col))) OpenSquareState(turn) else mat(row)(col).squareState)
   }
 
-  lazy val blackOpen = turn match {
-    case Black => possibleMoves.size
-    case White => setTurn(Black).possibleMoves.size
-  }
-
-  lazy val whiteOpen = turn match {
-    case White => possibleMoves.size
-    case Black => setTurn(White).possibleMoves.size
+  lazy val (blackOpen, whiteOpen) = turn match {
+    case Black => (possibleMoves.size, setTurn(White).possibleMoves.size)
+    case White => (setTurn(Black).possibleMoves.size, possibleMoves.size)
   }
 
   lazy val heuristic = Heuristic.heuristic(this)
