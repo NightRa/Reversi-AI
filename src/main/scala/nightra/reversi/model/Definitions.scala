@@ -5,7 +5,7 @@ import nightra.reversi.util.Collections
 import scalaz.std.vector._
 import scalaz.syntax.apply._
 
-trait Player {
+sealed trait Player {
   def piece: Piece = this match {
     case Black => BlackPiece
     case White => WhitePiece

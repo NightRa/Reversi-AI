@@ -13,7 +13,7 @@ class BoardSpec extends Spec {
     Vector(E, E, E, E, E, E, E, E),
     Vector(E, E, E, E, E, E, E, E),
     Vector(E, E, E, E, E, E, E, E)
-  ), size = 8, blacks = 4, pieces = 5, turn = White)
+  ), size = 8, blacks = 4, pieces = 5, stale = false, turn = White)
   "# Board:" >> {
     "Initial Board" >> {
       "initBoard(8)" >> {
@@ -26,7 +26,7 @@ class BoardSpec extends Spec {
           Vector(E, E, E, E, E, E, E, E),
           Vector(E, E, E, E, E, E, E, E),
           Vector(E, E, E, E, E, E, E, E)
-        ), size = 8, blacks = 2, pieces = 4, turn = Black)
+        ), size = 8, blacks = 2, pieces = 4, stale = false, turn = Black)
         val actual = Board.initialBoard(8)
         actual === expected
       }
@@ -56,7 +56,7 @@ class BoardSpec extends Spec {
         Vector(E, E, E, E, E, E, E, E),
         Vector(E, E, E, E, E, E, E, E),
         Vector(E, E, E, E, E, E, E, E)
-      ), size = 8, blacks = 3, pieces = 6, turn = Black)
+      ), size = 8, blacks = 3, pieces = 6, stale = false, turn = Black)
       val expectedFlipped = Vector(Position(3,3))
       val expected = Some(expectedBoard,expectedFlipped)
       actual === expected

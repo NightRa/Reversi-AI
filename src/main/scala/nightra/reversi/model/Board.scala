@@ -1,5 +1,6 @@
 package nightra.reversi.model
 
+import nightra.reversi.ai.Heuristic
 import nightra.reversi.util.{More, Done, Terminate, Collections}
 import scalaz.EphemeralStream
 import scalaz.std.tuple._
@@ -70,11 +71,23 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
       }
   }, start)
 
+  def move(move: Move): Option[Board] = move match {
+    case Pass =>
+      if(canPass) Some(passTurn)
+      else None
+    case Place(pos) => place(pos)
+  }
+
+  def canPass: Boolean = !stale && (possibleMoves match {
+    case Stream((Pass, _)) => true
+    case _ => false
+  })
+
   // returns a lazy Stream of: the taken move, and the new board.
   lazy val possibleMoves: Stream[(Move, Board)] = {
-    val allPositions = Stream.tabulate(size*size)(i => Position.tupled(Collections.to2D(size, i)))
+    val allPositions = Stream.tabulate(size * size)(i => Position.tupled(Collections.to2D(size, i)))
     val openPositions = Collections.collectStream(allPositions)(pos => place(pos).map(board => (Place(pos): Move, board)))
-    if (!stale) (Pass, passTurn) #:: openPositions
+    if (!stale && openPositions.isEmpty) Stream((Pass, passTurn))
     else openPositions
   }
 
@@ -88,22 +101,31 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
     case White => setTurn(Black).possibleMoves.size
   }
 
-  lazy val whiteOpen = turn match{
+  lazy val whiteOpen = turn match {
     case White => possibleMoves.size
     case Black => setTurn(White).possibleMoves.size
   }
+
+  lazy val heuristic = Heuristic.heuristic(this)
+
+  // Copy to a new board, without the computed game tree
+  def clean: Board = copy()
 
   def isTerminal: Boolean = {
     pieces == size * size || possibleMoves.isEmpty
   }
 
   def winner: Option[Player] =
-    if (blacks > whites)
-      Some(Black)
-    else if (whites > blacks)
-      Some(White)
-    else
-      None
+    if (!isTerminal) None
+    else {
+      if (blacks > whites)
+        Some(Black)
+      else if (whites > blacks)
+        Some(White)
+      else
+        None
+    }
+
 
   // To be honest, I don't really like that piece of code.
   // Research needs to be done with sub sum types.
@@ -147,7 +169,5 @@ object Board {
         }
     }
   }
-
-  def generator(board: Board, max: Boolean): Stream[(Move, Board)] = board.setTurn(if (max) Black else White).possibleMoves
 
 }

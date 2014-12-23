@@ -80,4 +80,15 @@ object Collections {
     }
   }
 
+  // Get the value, and clear the cache.
+  def cached[A](v: => A): (() => A, () => Unit) = {
+    var cache: A = null.asInstanceOf[A]
+    (() =>
+      if(cache == null){
+        cache = v
+        v
+      } else cache,
+      () => cache = null.asInstanceOf[A])
+  }
+
 }
