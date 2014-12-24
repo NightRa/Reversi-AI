@@ -72,6 +72,10 @@ object Collections {
   }
 
   def collect[A, B](vec: Vector[A])(f: A => Option[B]): Vector[B] = vec.collect(Function.unlift(f))
+  // Of course there are the built in ones,
+  // But I need them to be ephemeral, and the standard library doesn't provide these as such.
+
+  // This one is tail recursive because of lazyness :) -- That's awesome.
   def collectStream[A, B](stream: => Stream[A])(f: A => Option[B]): Stream[B] = stream match {
     case Stream.Empty => Stream.empty
     case x #:: xs => f(x) match {
@@ -80,15 +84,11 @@ object Collections {
     }
   }
 
-  // Get the value, and clear the cache.
-  def cached[A](v: => A): (() => A, () => Unit) = {
-    var cache: A = null.asInstanceOf[A]
-    (() =>
-      if(cache == null){
-        cache = v
-        v
-      } else cache,
-      () => cache = null.asInstanceOf[A])
+  def streamFind[A](stream: => Stream[A])(p: A => Boolean): Option[A] = stream match {
+    case Stream.Empty => None
+    case x #:: xs =>
+      if(p(x)) Some(x)
+      else streamFind(xs)(p)
   }
 
 }

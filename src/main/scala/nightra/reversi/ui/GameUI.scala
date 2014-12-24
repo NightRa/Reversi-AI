@@ -1,69 +1,20 @@
 package nightra.reversi.ui
 
-import nightra.reversi.ai.{AlphaBeta, Minimax}
-import nightra.reversi.model._
-
-import scalafx.Includes._
 import scalafx.application.Platform
-import scalafx.beans.property.{BooleanProperty, ObjectProperty}
+import scalafx.beans.property.ObjectProperty
 import scalafx.scene.Scene
-import scalafx.scene.control.Button
-import scalafx.scene.layout.{StackPane, GridPane, AnchorPane}
-import scalaz.{\/-, -\/, \/}
+import scalafx.scene.layout.AnchorPane
 import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
-object JavaFXUtil {
-  def mapProp[A, B](prop: ObjectProperty[A])(f: A => B): ObjectProperty[B] = {
-    val newProp: ObjectProperty[B] = ObjectProperty(f(prop.value))
-    prop.onChange((_, _, newState) => newProp.value = f(newState))
-    newProp
-  }
-
-  def map2Prop[A, B, C](prop1: ObjectProperty[A], prop2: ObjectProperty[B])(f: (A, B) => C): ObjectProperty[C] = {
-    val newProp: ObjectProperty[C] = ObjectProperty(f(prop1.value, prop2.value))
-    prop1.onChange((_, _, newState) => newProp.value = f(newState, prop2.value))
-    prop2.onChange((_, _, newState) => newProp.value = f(prop1.value, newState))
-    newProp
-  }
-
-  def merge[A](props: Vector[ObjectProperty[A]]): ObjectProperty[A] = {
-    val newProp: ObjectProperty[A] = ObjectProperty(props.head.value)
-    props.foreach(prop => prop.onChange((_, _, newState) => newProp.value = newState))
-    newProp
-  }
-
-  def toBooleanProp(prop: ObjectProperty[Boolean]): BooleanProperty = {
-    val newProp: BooleanProperty = BooleanProperty(prop.value)
-    prop.onChange((_, _, newState) => newProp.value = newState)
-    newProp
-  }
-}
+import nightra.reversi.ai.{AlphaBeta, GameTreeAI}
+import nightra.reversi.model._
+import nightra.reversi.util.JavaFXUtil._
 
 class GameUI(boardSize: Int) extends Scene(600, 600) {
 
-  import JavaFXUtil._
-
   val boardProp: ObjectProperty[Board] = ObjectProperty(Board.initialBoard(boardSize))
-  val tiles: ObjectProperty[Vector[Vector[SquareState]]] = mapProp(boardProp)(_.mobilityBoard)
   val winner: ObjectProperty[Option[Player]] = mapProp(boardProp)(_.winner)
-
-  val reversiTiles: GridPane = {
-    val board = new GridPane
-    for {
-      i <- 0 until boardSize
-      j <- 0 until boardSize
-    } {
-      val square = new ReversiSquare(() => {
-        moved(Place(Position(i, j)))
-      }, () => {
-        tiles.value = Board.lookaheadBoard(boardProp.value, Position(i, j))
-      }, () => {
-        tiles.value = boardProp.value.mobilityBoard
-      }, mapProp(tiles)(states => states(i)(j)))
-      board.add(square, j, i)
-    }
-    board
-  }
 
   winner.onChange((_, _, _) => winner.value match {
     case None => ()
@@ -80,17 +31,30 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
     }
   }
 
-  def aiAsync(board: Board): Task[(Float, Move, Board)] = {
-    val aiTask = Task.delay(AlphaBeta.alphaBeta[Board, (Move, Board)](board)(_.heuristic)(_.possibleMoves, _._2)(_.isTerminal)(_.turn.isMax)(5))
+  def aiAsync(board: Board): Task[(Board, Move, Float)] = {
+    treeAI(board, 4)
+  }
+
+  def imperativeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
+    val aiTask = Task.delay(AlphaBeta.alphaBeta[Board, (Move, Board)](board)(_.heuristic)(_.possibleMoves, _._2)(_.isTerminal)(_.turn.isMax)(depth))
+    // val aiTask = Task.delay(GameTreeAI.reversiMinimax(board, 5))
     Task.fork(aiTask.flatMap {
       case (score, None) => Task.fail(new IllegalStateException("No move for the AI."))
-      case (score, Some((move, newBoard))) => Task.now((score, move, newBoard))
+      case (score, Some((move,newBoard))) => Task.now((newBoard, move, score))
     })
-
   }
+
+  def treeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
+    val aiTask = Task.delay(GameTreeAI.reversiMinimax(board, depth))
+    Task.fork(aiTask.flatMap {
+      case None => Task.fail(new IllegalStateException("No move for the AI."))
+      case Some((newBoard,move,score)) => Task.now((newBoard, move, score))
+    })
+  }
+
   def runAILog(board: Board): Unit = aiAsync(board).runAsync {
     case -\/(exception) => ()
-    case \/-((score, move, newBoard)) =>
+    case \/-((newBoard, move, score)) =>
       Platform.runLater {
         println(s"The computer moved to $move")
         println(s"The score is: $score")
@@ -111,17 +75,11 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
       runAILog(board)
   }
 
-  val game = new StackPane() {
-    content = List(reversiTiles)
+  def clickSquare(pos: Position): Unit = {
+    moved(Place(pos))
   }
 
-  AnchorPane.setTopAnchor(game, 0d)
-  AnchorPane.setBottomAnchor(game, 0d)
-  AnchorPane.setLeftAnchor(game, 0d)
-  AnchorPane.setRightAnchor(game, 0d)
+  val game = new BoardUI(boardProp, boardSize, clickSquare)
 
-  root = new AnchorPane() {
-    content = game
-    prefHeight <== width
-  }
+  root = game
 }

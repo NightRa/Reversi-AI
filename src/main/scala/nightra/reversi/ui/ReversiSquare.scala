@@ -1,15 +1,11 @@
 package nightra.reversi.ui
 
-import nightra.reversi.model.{Position, SquareState}
+import nightra.reversi.model.SquareState
 
 import scalafx.Includes._
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.effect._
-import scalafx.scene.input.MouseEvent
 import scalafx.scene.layout.{Region, StackPane}
-
-import JavaFXUtil._
-
 import scalafx.scene.paint.Color
 
 class ReversiSquare(onClick: () => Unit, onHover: () => Unit, onHoverEnd: () => Unit, val state: ObjectProperty[SquareState]) extends StackPane {

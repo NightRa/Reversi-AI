@@ -2,9 +2,8 @@ package nightra.reversi.model
 
 import nightra.reversi.ai.Heuristic
 import nightra.reversi.util.{More, Done, Terminate, Collections}
-import scalaz.EphemeralStream
-import scalaz.std.tuple._
-import scalaz.syntax.enum._
+import Collections._
+import Board._
 
 case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: Int, pieces: Int, stale: Boolean, turn: Player) {
   def whites = pieces - blacks
@@ -31,7 +30,7 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
       None
     } else {
       val rows: Vector[Vector[Position]] =
-        Collections.collect[(Position, Piece), Vector[Position]](pos.neighbors(size).map(p => (p, unsafeAt(p)) /* neighbours(size) ensures inBounds(neighbor)*/)) {
+        collect[(Position, Piece), Vector[Position]](pos.neighbors(size).map(p => (p, unsafeAt(p)) /* neighbours(size) ensures inBounds(neighbor)*/)) {
           case (neighborPos, piece) =>
             val (dx, dy) = neighborPos - pos
             val row: Option[Vector[Position]] =
@@ -56,7 +55,7 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
     }
 
 
-  private def terminatedPath(dx: Int, dy: Int, start: Position, startColor: Player): Option[Vector[Position]] = Collections.unfoldMaybe[Position, Position]({
+  private def terminatedPath(dx: Int, dy: Int, start: Position, startColor: Player): Option[Vector[Position]] = unfoldMaybe[Position, Position]({
     case p@Position(x, y) =>
       at(p) match {
         case None => Terminate // Out of the board
@@ -73,7 +72,7 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
 
   def move(move: Move): Option[Board] = move match {
     case Pass =>
-      if(canPass) Some(passTurn)
+      if (canPass) Some(passTurn)
       else None
     case Place(pos) => place(pos)
   }
@@ -85,14 +84,13 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
 
   // returns a lazy Stream of: the taken move, and the new board.
   def possibleMoves: Stream[(Move, Board)] = {
-    val allPositions = Stream.tabulate(size * size)(i => Position.tupled(Collections.to2D(size, i)))
-    val openPositions = Collections.collectStream(allPositions)(pos => place(pos).map(board => (Place(pos): Move, board)))
+    val openPositions = collectStream(positions(size))(pos => place(pos).map(board => (Place(pos): Move, board)))
     if (!stale && openPositions.isEmpty) Stream((Pass, passTurn))
     else openPositions
   }
 
   def mobilityBoard: Vector[Vector[SquareState]] = {
-    val open = Collections.collectStream(possibleMoves) { case (Place(pos), board) => Some(pos) case _ => None}.toList.toSet
+    val open = collectStream(possibleMoves) { case (Place(pos), board) => Some(pos) case _ => None}.toList.toSet
     Vector.tabulate(size, size)((row, col) => if (open(Position(row, col))) OpenSquareState(turn) else mat(row)(col).squareState)
   }
 
@@ -102,9 +100,6 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
   }
 
   lazy val heuristic = Heuristic.heuristic(this)
-
-  // Copy to a new board, without the computed game tree
-  def clean: Board = copy()
 
   def isTerminal: Boolean = {
     pieces == size * size || possibleMoves.isEmpty
@@ -164,5 +159,20 @@ object Board {
         }
     }
   }
+
+  //p in positions(size) => inBounds(size)
+  def positions(size: Int): Stream[Position] =
+    Stream.tabulate(size * size)(i => Position.tupled(to2D(size, i)))
+
+  // Assumes the after board is a child of the before board.
+  def extractMove(before: Board, after: Board): Move = {
+    // I really don't like placing preconditions.
+    // I really want Dependant types please!!!! -- No one is really stopping me from using a dependently typed language..
+    require(before.size == after.size, "placedPosition requires boards of equal sizes.")
+    val posMaybe = streamFind(positions(before.size))(p => before.unsafeAt(p).isEmpty && !after.unsafeAt(p).isEmpty)
+    //                                                           ^ p in positions(size) => inBounds(size) => safe
+    posMaybe.fold[Move](Pass)(Place)
+  }
+
 
 }
