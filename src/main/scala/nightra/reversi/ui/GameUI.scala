@@ -1,5 +1,7 @@
 package nightra.reversi.ui
 
+import nightra.reversi.ai.tree.TreeMinimax
+
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.Scene
@@ -7,7 +9,7 @@ import scalafx.scene.layout.AnchorPane
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
 
-import nightra.reversi.ai.{AlphaBeta, GameTreeAI}
+import nightra.reversi.ai.AlphaBeta
 import nightra.reversi.model._
 import nightra.reversi.util.JavaFXUtil._
 
@@ -36,8 +38,7 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
   }
 
   def imperativeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
-    val aiTask = Task.delay(AlphaBeta.alphaBeta[Board, (Move, Board)](board)(_.heuristic)(_.possibleMoves, _._2)(_.isTerminal)(_.turn.isMax)(depth))
-    // val aiTask = Task.delay(GameTreeAI.reversiMinimax(board, 5))
+    val aiTask = Task.delay(AlphaBeta.reversiAlphaBeta(board,depth))
     Task.fork(aiTask.flatMap {
       case (score, None) => Task.fail(new IllegalStateException("No move for the AI."))
       case (score, Some((move,newBoard))) => Task.now((newBoard, move, score))
@@ -45,10 +46,10 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
   }
 
   def treeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
-    val aiTask = Task.delay(GameTreeAI.reversiMinimax(board, depth))
+    val aiTask = Task.delay(TreeMinimax.reversiMinimax(board, depth))
     Task.fork(aiTask.flatMap {
-      case None => Task.fail(new IllegalStateException("No move for the AI."))
-      case Some((newBoard,move,score)) => Task.now((newBoard, move, score))
+      case (score,None) => Task.fail(new IllegalStateException("No move for the AI."))
+      case (score, Some((move, newBoard))) => Task.now((newBoard, move, score))
     })
   }
 

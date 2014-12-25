@@ -1,8 +1,9 @@
 package nightra.reversi.model
 
 import nightra.reversi.ai.Heuristic
-import nightra.reversi.util.{More, Done, Terminate, Collections}
-import Collections._
+import nightra.reversi.util._
+import nightra.reversi.util.Collections._
+import nightra.reversi.util.Streams._
 import Board._
 
 case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: Int, pieces: Int, stale: Boolean, turn: Player) {
@@ -128,8 +129,10 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
 }
 
 object Board {
+  def validBoardSize(size: Int): Boolean = size >= 4 && size % 2 == 0
+
   def initialBoard(size: Int) = {
-    require(size >= 4 && size % 2 == 0, s"initialBoard: A board size should be >= 4 and even, size: $size")
+    require(validBoardSize(size), s"initialBoard: A board size should be >= 4 and even, size: $size")
     val left = size / 2 - 1
     val right = size / 2
     val top = size / 2 - 1
@@ -174,5 +177,16 @@ object Board {
     posMaybe.fold[Move](Pass)(Place)
   }
 
+  // Can't determine the turn because of passes.
+  // stale depends on how one got to this board.
+  def fromMatrix(mat: Vector[Vector[Piece]], turn: Player, stale: Boolean): Board = {
+    val rowCount = mat.size
+    val validMatrix = validBoardSize(rowCount) && mat.forall(row => row.size == rowCount)
+    require(validMatrix, "fromMatrix requires a square matrix with a valid board size; >= 4 and even.")
 
+    val boardSize = mat.size
+    val blacks = mat.map(_.count(_ == BlackPiece)).sum
+    val pieces = mat.map(_.count(!_.isEmpty)).sum
+    Board(mat, boardSize, blacks, pieces, stale, turn)
+  }
 }

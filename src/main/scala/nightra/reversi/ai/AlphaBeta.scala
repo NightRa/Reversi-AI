@@ -1,7 +1,9 @@
 package nightra.reversi.ai
 
+import nightra.reversi.model.{Move, Board}
+
 object AlphaBeta {
-  def alphaBeta[Board, Move](state: Board)(heuristic: Board => Float)(generator: Board => Stream[Move], toBoard: Move => Board)(terminal: Board => Boolean)(max: Board => Boolean)(depth: Int): (Float, Option[Move]) = {
+  def alphaBeta[Board, Move](state: Board)(heuristic: Board => Float)(generator: Board => Stream[Move])(toBoard: Move => Board)(terminal: Board => Boolean)(max: Board => Boolean)(depth: Int): (Float, Option[Move]) = {
     // Returns none if bestMin <= bestMax, depth is 0, or the state is terminal.
     def go(state: Board, alpha: Float, beta: Float, depth: Int): (Float, Option[Move]) = {
       if (depth == 0 || terminal(state)) {
@@ -43,4 +45,7 @@ object AlphaBeta {
 
     go(state, alpha = Float.NegativeInfinity, beta = Float.PositiveInfinity, depth)
   }
+
+  def reversiAlphaBeta(board: Board, depth: Int): (Float, Option[(Move, Board)]) =
+    alphaBeta(board)(_.heuristic)(_.possibleMoves)(_._2)(_.isTerminal)(_.turn.isMax)(depth)
 }

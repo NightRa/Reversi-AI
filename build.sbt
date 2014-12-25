@@ -6,6 +6,11 @@ scalaVersion := "2.11.4"
 
 // initialCommands in console := "import scalaz._, Scalaz._, nightra.reversi._, model._, ai._, util._"
 
+resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+
+// Kind projector! Yay!
+addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.1.0"
 
 libraryDependencies += "org.specs2" %% "specs2-scalacheck" % "2.4.13"

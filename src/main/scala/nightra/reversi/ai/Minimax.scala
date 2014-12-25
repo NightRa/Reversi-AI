@@ -1,5 +1,7 @@
 package nightra.reversi.ai
 
+import nightra.reversi.model.{Move, Board}
+
 object Minimax {
   // returns the calculated value of the state + the chosen move.
   // if no moves available, returns none.
@@ -11,7 +13,7 @@ object Minimax {
   //            False => generate for the Min player.
   // heuristic: takes the current state, and the already calculated possible moves, for the given player.
   //            proof obligation: the calculated moves must equal generator(state,max)
-  def minimax[Board, Move](state: Board)(heuristic: Board => Float)(generator: Board => Stream[Move], toBoard: Move => Board)(terminal: Board => Boolean)(max: Board => Boolean)(depth: Int): (Float, Option[Move]) = {
+  def minimax[Board, Move](state: Board)(heuristic: Board => Float)(generator: Board => Stream[Move])(toBoard: Move => Board)(terminal: Board => Boolean)(max: Board => Boolean)(depth: Int): (Float, Option[Move]) = {
     def go(state: Board, depth: Int): (Float, Option[Move]) = {
       if (depth == 0 || terminal(state)) {
         (heuristic(state), None)
@@ -33,4 +35,7 @@ object Minimax {
     }
     go(state, depth)
   }
+
+  def reversiMinimax(board: Board, depth: Int): (Float, Option[(Move,Board)]) =
+  minimax(board)(_.heuristic)(_.possibleMoves)(_._2)(_.isTerminal)(_.turn.isMax)(depth)
 }

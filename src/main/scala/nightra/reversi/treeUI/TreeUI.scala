@@ -1,6 +1,6 @@
 package nightra.reversi.treeUI
 
-import nightra.reversi.ai.GameTreeAI
+import nightra.reversi.ai.tree.{GameTree, TreeMinimax}
 import nightra.reversi.model.{Board, Position}
 import nightra.reversi.ui.{BoardUI, GameUI}
 import org.abego.treelayout.util.{DefaultConfiguration, DefaultTreeForTreeLayout}
@@ -102,8 +102,8 @@ object TreeUI extends JFXApp {
 
   }
 
-  val board = Board.initialBoard(8).place(Position(2, 3)).get
-  val tree = GameTreeAI.prune(2)(GameTreeAI.generateTree(board))
+  val board = Board.initialBoard(8).place(Position(5, 4)).get
+  val tree = GameTree.prune(2)(GameTree.generateTree(board))
 
   val treeScene = new TreeDrawing(tree)
   stage = new PrimaryStage {

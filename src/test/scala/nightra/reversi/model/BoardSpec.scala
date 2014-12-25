@@ -34,8 +34,7 @@ class BoardSpec extends Spec {
     "place 1" >> {
       val initial = Board.initialBoard(8)
       val actual = initial.place(Position(2, 3))
-      val expectedFlipped = Vector(Position(3,3))
-      val expected = Some((boardMove1,expectedFlipped))
+      val expected = Some(boardMove1)
       actual === expected
     }
     "place 2" >> {
@@ -57,8 +56,7 @@ class BoardSpec extends Spec {
         Vector(E, E, E, E, E, E, E, E),
         Vector(E, E, E, E, E, E, E, E)
       ), size = 8, blacks = 3, pieces = 6, stale = false, turn = Black)
-      val expectedFlipped = Vector(Position(3,3))
-      val expected = Some(expectedBoard,expectedFlipped)
+      val expected = Some(expectedBoard)
       actual === expected
     }
   }

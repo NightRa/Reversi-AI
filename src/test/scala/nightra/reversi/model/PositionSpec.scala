@@ -11,7 +11,7 @@ import scalaz.syntax.apply._
 class PositionSpec extends Spec with Matchers {
   val boardSizes = Gen.choose(2, 6).map(_ * 2)
   def boardPosition(size: Int) = (Gen.choose(0, size - 1) |@| Gen.choose(0, size - 1))(Position).map(p => (size, p))
-  val positions = boardSizes.flatMap(boardPosition)
+  val positions: Gen[(Int, Position)] = boardSizes.flatMap(boardPosition)
 
   "# Position:" >> {
     "## Neighbours" should {
