@@ -38,36 +38,19 @@ object Collections {
   }
 
   def unfold[A, B](f: B => Option[(A, B)], start: B): Vector[A] = {
-    def go(st: B, v: Vector[A]): Vector[A] = f(st) match {
+    def unfoldLoop(st: B, v: Vector[A]): Vector[A] = f(st) match {
       case None => v
-      case Some((e, st2)) => go(st2, v :+ e)
+      case Some((e, st2)) => unfoldLoop(st2, v :+ e)
     }
-    go(start, Vector.empty)
+    unfoldLoop(start, Vector.empty)
   }
 
-  def unfoldMaybe[A, B](f: B => UnfoldStep[(A, B)], start: B): Option[Vector[A]] = {
-    def go(st: B, v: Vector[A]): Option[Vector[A]] = f(st) match {
+  def unfoldMaybe[A, B](f: B => UnfoldStep[(A, B)], start: B): Option[List[A]] = {
+    def unfoldMaybeLoop(st: B, v: List[A]): Option[List[A]] = f(st) match {
       case Terminate => None
       case Done => Some(v)
-      case More((e, st2)) => go(st2, v :+ e)
+      case More((e, st2)) => unfoldMaybeLoop(st2, e :: v)
     }
-    go(start, Vector.empty)
+    unfoldMaybeLoop(start, Nil).map(_.reverse)
   }
-
-  // false - terminate
-  // true  - continue
-  // Feels just not ok for some reason. ((B,A) => Either[B,B] is isomorphic to (B,A) => (B, Boolean))
-  def shortFoldl[A, B](v: Vector[A])(z: B)(f: (B, A) => (B, Boolean)): B = {
-    def go(v: Vector[A], index: Int, acc: B): B =
-      if (index >= v.size) acc
-      else {
-        val (value, continue) = f(acc, v(index))
-        if (continue) go(v, index + 1, value)
-        else value
-      }
-
-    go(v, 0, z)
-  }
-
-  def collect[A, B](vec: Vector[A])(f: A => Option[B]): Vector[B] = vec.collect(Function.unlift(f))
 }

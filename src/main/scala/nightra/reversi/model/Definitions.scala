@@ -1,73 +1,66 @@
 package nightra.reversi.model
 
-import nightra.reversi.util.Collections
-
-import scalaz.std.vector._
-import scalaz.syntax.apply._
+import scala.annotation.tailrec
 
 sealed trait Player {
-  def piece: Piece = this match {
-    case Black => BlackPiece
-    case White => WhitePiece
-  }
+  def piece: Piece
+  def opposite: Player
 
-  def opposite: Player = this match {
-    case Black => White
-    case White => Black
-  }
-
-  def isMax: Boolean = this match {
-    case Black => true
-    case White => false
-  }
-
-  def isBlack: Boolean = this match {
-    case Black => true
-    case White => false
-  }
-
-  def isWhite: Boolean = this match {
-    case Black => false
-    case White => true
-  }
+  def isBlack: Boolean
+  def isWhite: Boolean = !isBlack
+  def isMax: Boolean = isBlack
 }
 object Player {
   def fromMax(max: Boolean): Player =
     if (max) Black
     else White
 }
-case object Black extends Player
-case object White extends Player
+case object Black extends Player {
+  def piece = BlackPiece
+  def isBlack = true
+  def opposite = White
+}
+case object White extends Player {
+  def piece = WhitePiece
+  def isBlack = false
+  def opposite = Black
+}
 
 // ---------------------------------------------
 
 // Piece <=> Maybe Player <=> Player + 1
 sealed trait Piece {
-  def player: Option[Player] = this match {
-    case BlackPiece => Some(Black)
-    case WhitePiece => Some(White)
-    case EmptyPiece => None
-  }
+  def player: Option[Player]
+  // Oh performance. used in hotspot - Board.place
+  def unsafePlayer: Player
+  def squareState: SquareState
 
-  def isPlayer: Boolean = player.isDefined
-
+  def isPlayer: Boolean
   def isEmpty: Boolean = !isPlayer
 
-  def squareState: SquareState = this match {
-    case BlackPiece => BlackSquareState
-    case WhitePiece => WhiteSquareState
-    case EmptyPiece => EmptySquareState
-  }
-
-  override def toString = this match {
-    case BlackPiece => "B"
-    case WhitePiece => "W"
-    case EmptyPiece => "-"
-  }
+  def toString: String
 }
-case object BlackPiece extends Piece
-case object WhitePiece extends Piece
-case object EmptyPiece extends Piece
+case object BlackPiece extends Piece {
+  def player = Some(Black)
+  def unsafePlayer = Black
+  def squareState = BlackSquareState
+  def isPlayer = true
+  override def toString = "B"
+}
+case object WhitePiece extends Piece {
+  def player = Some(White)
+  def unsafePlayer = White
+  def squareState = WhiteSquareState
+  def isPlayer = true
+  override def toString = "W"
+}
+case object EmptyPiece extends Piece {
+  def player = None
+  def unsafePlayer = throw new IllegalArgumentException("EmptyPiece.unsafePlayer")
+  def squareState = EmptySquareState
+  def isPlayer = false
+  override def toString = "-"
+}
 
 object Piece {
   object Aliases {
@@ -80,18 +73,32 @@ object Piece {
 // ---------------------------------------------
 
 case class Position(row: Int, column: Int) {
-  def neighbors(boardSize: Int): Vector[Position] = Collections.collect(Vector(-1, 0, 1).tuple(Vector(-1, 0, 1))) {
-    case (x, y) =>
-      val nextPos = Position(x + row, y + column)
-      if (nextPos != this && nextPos.inBounds(boardSize))
-        Some(nextPos)
-      else
-        None
+
+  import Position._
+
+  // This is a performance hotspot.
+  def neighbors(boardSize: Int): List[Position] = {
+    @tailrec
+    def neighborsLoop(index: Int, acc: List[Position]): List[Position] = {
+      if (index < deltas.size) {
+        val (dx, dy) = deltas(index)
+        val pos = Position(row + dx, column + dy)
+        if (pos.inBounds(boardSize)) neighborsLoop(index + 1, pos :: acc)
+        else neighborsLoop(index + 1, acc)
+      } else {
+        acc
+      }
+    }
+    neighborsLoop(0, Nil)
   }
 
   def inBounds(boardSize: Int): Boolean = row >= 0 && row < boardSize && column >= 0 && column < boardSize
 
   def -(other: Position): (Int, Int) = (row - other.row, column - other.column)
+}
+
+object Position {
+  val deltas = Array((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
 }
 
 // ---------------------------------------------

@@ -1,5 +1,6 @@
 package nightra.reversi.util
 
+import nightra.reversi.interplay.RemoteMove
 import nightra.reversi.model._
 
 import scala.util.Try
@@ -16,7 +17,7 @@ object RemoteComputer {
   def parseInt(s: String): Option[Int] = Try(s.toInt).toOption
 
   def parsePosition(s: String): Option[Position] = s.split(" |,") match {
-    case Array(row, col) => (parseInt(row) |@| parseInt(col))(Position)
+    case Array(row, col) => (parseInt(row) |@| parseInt(col))(Position.apply)
     case _ => None
   }
 

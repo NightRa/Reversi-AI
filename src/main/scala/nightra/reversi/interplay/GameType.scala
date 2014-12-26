@@ -1,4 +1,4 @@
-package nightra.reversi.model
+package nightra.reversi.interplay
 
 // Int x PlayerType x PlayerType
 /*size >= 4 && size is even.*/

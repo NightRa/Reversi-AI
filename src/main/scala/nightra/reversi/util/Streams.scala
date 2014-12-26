@@ -1,6 +1,6 @@
 package nightra.reversi.util
 
-import scalaz.Order
+import scalaz.{Tree, Order}
 import scalaz.syntax.order._
 
 object Streams {
@@ -19,18 +19,28 @@ object Streams {
   def streamFind[A](stream: => Stream[A])(p: A => Boolean): Option[A] = stream match {
     case Stream.Empty => None
     case x #:: xs =>
-      if(p(x)) Some(x)
+      if (p(x)) Some(x)
       else streamFind(xs)(p)
   }
 
   // Just to make sure the traversal is ephemeral.
   def minimum[A: Order](stream: => Stream[A]): A = {
     require(stream.nonEmpty, "minimum and maximum require a non empty stream.")
-    def go(stream: Stream[A], acc: A): A =
+    def minimumLoop(stream: Stream[A], acc: A): A =
       if (stream.isEmpty) acc
-      else go(stream.tail, acc min stream.head)
-    go(stream.tail, stream.head)
+      else minimumLoop(stream.tail, acc min stream.head)
+    minimumLoop(stream.tail, stream.head)
   }
 
   def maximum[A: Order](stream: => Stream[A]): A = minimum(stream)(Order[A].reverseOrder)
+
+  // Tree.map violates Ephemerality because Stream.map violates Ephemerality..
+  def streamMap[A, B](stream: => Stream[A])(f: A => B): Stream[B] =
+    if (stream.isEmpty) Stream.Empty
+    else f(stream.head) #:: streamMap(stream.tail)(f)
+
+  def treeMap[A, B](tree: => Tree[A])(f: A => B): Tree[B] = {
+    Tree.node(f(tree.rootLabel), streamMap(tree.subForest)(treeMap(_)(f)))
+  }
+
 }

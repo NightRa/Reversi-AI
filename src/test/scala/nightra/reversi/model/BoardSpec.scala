@@ -59,6 +59,12 @@ class BoardSpec extends Spec {
       val expected = Some(expectedBoard)
       actual === expected
     }
+    "flippedIfPlaced" >> {
+      val initial = Board.initialBoard(8)
+      val expected = List(Position(3,3))
+      val actual = initial.flippedIfPlaced(Position(2,3))
+      actual === expected
+    }
   }
 
 }

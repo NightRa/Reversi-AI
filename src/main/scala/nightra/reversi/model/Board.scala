@@ -6,6 +6,9 @@ import nightra.reversi.util.Collections._
 import nightra.reversi.util.Streams._
 import Board._
 
+import scala.annotation.tailrec
+import scala.collection.mutable
+
 case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: Int, pieces: Int, stale: Boolean, turn: Player) {
   def whites = pieces - blacks
 
@@ -23,40 +26,54 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
 
   def passTurn: Board = setTurn(turn.opposite).copy(stale = true)
 
-  // Proof obligation: inBounds(pos)
+  // This is one of the main hotspots, so I optimized it as much as I could
+  // Given a position, returns a list of flipped positions if it was to be placed,
+  // And returns the size of the list - the amount of flipped pieces.
+  def flippedIfPlaced(pos: Position): List[Position] = {
+    val oppositePlayer = turn.opposite
+    val oppositePiece = oppositePlayer.piece
+    @tailrec
+    def flippedLoop(index: Int, acc: List[Position]): List[Position] =
+      if (index >= Position.deltas.length) acc
+      else {
+        val (dx, dy) = Position.deltas(index)
+        val neighborPos = Position(pos.row + dx, pos.column + dy)
+
+        if (neighborPos.inBounds(this.size) && unsafeAt(neighborPos) == oppositePiece) {
+          val directedRow: List[Position] = terminatedPath(dx, dy, neighborPos, oppositePlayer).getOrElse(Nil)
+          flippedLoop(index + 1, directedRow ++ acc)
+        } else {
+          flippedLoop(index + 1, acc)
+        }
+      }
+    flippedLoop(0, Nil)
+  }
+
   // If valid move, return the board after placement and the flipped positions.
   // Otherwise, none.
   def place(pos: Position): Option[Board] =
     if (!pos.inBounds(size) || mat(pos.row)(pos.column).isPlayer /*Out of bounds, or player*/ ) {
       None
     } else {
-      val rows: Vector[Vector[Position]] =
-        collect[(Position, Piece), Vector[Position]](pos.neighbors(size).map(p => (p, unsafeAt(p)) /* neighbours(size) ensures inBounds(neighbor)*/)) {
-          case (neighborPos, piece) =>
-            val (dx, dy) = neighborPos - pos
-            val row: Option[Vector[Position]] =
-              piece.player // Must start with a filled square.
-                .filter(player => player == turn.opposite) // Must be the opposing player's piece
-                .flatMap(color => terminatedPath(dx, dy, neighborPos, color)) // Fill the row starting from the piece.
-            row
-        }
-      val flipped = rows.flatten
+      val flipped = flippedIfPlaced(pos)
       if (flipped.isEmpty) {
         // No pieces flipped => Invalid move.
         None
       } else {
+        // Updating the matrix each time isn't efficient.
         val flippedMat = flipped.foldLeft(mat)((mat, flip) => mat.updated(flip.row, mat(flip.row).updated(flip.column, turn.piece)))
         val placedMat = flippedMat.updated(pos.row, flippedMat(pos.row).updated(pos.column, turn.piece))
         val newBlacks = turn match {
-          case Black => blacks + flipped.size + 1 // new black placed at pos
-          case White => blacks - flipped.size
+          // List.size is O(n) - Bad!
+          case Black => blacks + flipped.size + 1 // + 1 - new black placed at pos
+          case White => blacks - flipped.size // placed flippedSize white pieces, so there are that many less blacks.
         }
         Some(Board(placedMat, size, newBlacks, pieces + 1, stale = false, turn.opposite))
       }
     }
 
 
-  private def terminatedPath(dx: Int, dy: Int, start: Position, startColor: Player): Option[Vector[Position]] = unfoldMaybe[Position, Position]({
+  private def terminatedPath(dx: Int, dy: Int, start: Position, startColor: Player): Option[List[Position]] = unfoldMaybe[Position, Position]({
     case p@Position(x, y) =>
       at(p) match {
         case None => Terminate // Out of the board
@@ -165,7 +182,7 @@ object Board {
 
   //p in positions(size) => inBounds(size)
   def positions(size: Int): Stream[Position] =
-    Stream.tabulate(size * size)(i => Position.tupled(to2D(size, i)))
+    Stream.tabulate(size * size)(i => (Position.apply _).tupled(to2D(size, i)))
 
   // Assumes the after board is a child of the before board.
   def extractMove(before: Board, after: Board): Move = {
