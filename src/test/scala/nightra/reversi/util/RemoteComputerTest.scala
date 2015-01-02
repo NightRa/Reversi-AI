@@ -1,16 +1,17 @@
 package nightra.reversi.util
 
 import nightra.reversi.interplay.RemoteMove
-import nightra.reversi.model.{Black, White, Position}
+import nightra.reversi.model._
 import org.specs2.scalaz.Spec
 import nightra.reversi.util.RemoteComputer._
 
 class RemoteComputerTest extends Spec {
   "parsePosition" >> {
-    parsePosition("1 2") === Some(Position(1,2))
-    parsePosition("1,2") === Some(Position(1,2))
-    parsePosition("1, 2") === Some(Position(1,2))
-    parsePosition("1 , 2") === Some(Position(1,2))
+    parsePosition("1 2") === Some(Place(Position(1,2)))
+    parsePosition("1,2") === Some(Place(Position(1,2)))
+    parsePosition("1, 2") === Some(Place(Position(1,2)))
+    parsePosition("1 , 2") === Some(Place(Position(1,2)))
+    parsePosition("-1, -1") === Some(Pass)
     parsePosition("12") === None
   }
   "parsePlayer" >> {
@@ -23,6 +24,6 @@ class RemoteComputerTest extends Spec {
     parseRemoteMove(
       """White
         |1, 2
-      """.stripMargin) === Some(RemoteMove(White, Position(1,2)))
+      """.stripMargin) === Some(RemoteMove(White, Place(Position(1,2))))
   }
 }

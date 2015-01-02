@@ -40,7 +40,7 @@ class PositionSpec extends Spec with Matchers {
       }
       "pass the unit tests:" >> {
         val pos = Position(0, 3)
-        "unit test 1 - neigbors" >> {
+        "unit test 1 - neighbors" >> {
           val expected = Set(Position(0, 2), Position(1, 2), Position(1, 3), Position(1, 4), Position(0, 4))
           val actual = pos.neighbors(6).toSet
           actual === expected
