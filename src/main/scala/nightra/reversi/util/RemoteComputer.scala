@@ -16,7 +16,7 @@ object RemoteComputer {
 
   def parseInt(s: String): Option[Int] = Try(s.toInt).toOption
 
-  def parsePosition(s: String): Option[Position] = s.split(" |,") match {
+  def parsePosition(s: String): Option[Position] = s.split(" *, *| ") match {
     case Array(row, col) => (parseInt(row) |@| parseInt(col))(Position.apply)
     case _ => None
   }
