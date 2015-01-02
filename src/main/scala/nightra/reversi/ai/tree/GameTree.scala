@@ -1,8 +1,10 @@
 package nightra.reversi.ai.tree
 
-import nightra.reversi.model.Board
+import nightra.reversi.model.{Move, Board}
+import nightra.reversi.util.Lazy
+import nightra.reversi.util.Streams._
 
-import scalaz.Tree
+import scalaz.{Order, Tree}
 import scalaz.Tree._
 
 object GameTree {
@@ -11,6 +13,4 @@ object GameTree {
     tree =>
       if (depth == 0) node(tree.rootLabel, Stream.Empty)
       else node(tree.rootLabel, tree.subForest.map(prune(depth - 1)))
-
-
 }

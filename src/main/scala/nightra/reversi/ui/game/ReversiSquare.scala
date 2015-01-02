@@ -1,4 +1,4 @@
-package nightra.reversi.ui
+package nightra.reversi.ui.game
 
 import nightra.reversi.model.SquareState
 

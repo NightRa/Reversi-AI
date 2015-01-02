@@ -1,6 +1,6 @@
 package nightra.reversi.ai
 
-import nightra.reversi.ai.tree.TreeMinimax
+import nightra.reversi.ai.tree.{TreeAI, TreeMinimax}
 import nightra.reversi.model._
 import org.scalacheck.{Test, Gen}
 import org.scalacheck.Test.Parameters
@@ -19,9 +19,11 @@ class AITest extends Spec {
         (board, depth) =>
           val (alphaBeta,_) = AlphaBeta.reversiAlphaBeta(board, depth)
           val (minimax,_) = Minimax.reversiMinimax(board,depth)
-          val (treeMinimax,_) = TreeMinimax.reversiMinimax(board,depth)
+          val (treeMinimax,_) = TreeAI.minimax(board,depth)
+          val (treeAlphaBeta, _) = TreeAI.alphaBeta(board, depth)
           (alphaBeta === minimax) and
-            (minimax === treeMinimax)
+            (minimax === treeMinimax) and
+            (treeMinimax === treeAlphaBeta)
       }.set(minTestsOk = 5, workers = 2)
     }
   }

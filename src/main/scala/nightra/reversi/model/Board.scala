@@ -184,14 +184,17 @@ object Board {
   def positions(size: Int): Stream[Position] =
     Stream.tabulate(size * size)(i => (Position.apply _).tupled(to2D(size, i)))
 
-  // Assumes the after board is a child of the before board.
-  def extractMove(before: Board, after: Board): Move = {
+  def extractMove(before: Board, after: Board): Option[Move] = {
     // I really don't like placing preconditions.
     // I really want Dependant types please!!!! -- No one is really stopping me from using a dependently typed language..
     require(before.size == after.size, "placedPosition requires boards of equal sizes.")
-    val posMaybe = streamFind(positions(before.size))(p => before.unsafeAt(p).isEmpty && !after.unsafeAt(p).isEmpty)
-    //                                                           ^ p in positions(size) => inBounds(size) => safe
-    posMaybe.fold[Move](Pass)(Place)
+    if(before == after) None
+    else{
+      val posMaybe = streamFind(positions(before.size))(p => before.unsafeAt(p).isEmpty && !after.unsafeAt(p).isEmpty)
+      //                                                           ^ p in positions(size) => inBounds(size) => safe
+      Some(posMaybe.fold[Move](Pass)(Place))
+    }
+
   }
 
   // Can't determine the turn because of passes.

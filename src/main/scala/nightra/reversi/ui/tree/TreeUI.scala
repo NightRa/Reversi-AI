@@ -1,8 +1,8 @@
-package nightra.reversi.treeUI
+package nightra.reversi.ui.tree
 
-import nightra.reversi.ai.tree.{GameTree, TreeMinimax}
+import nightra.reversi.ai.tree.GameTree
 import nightra.reversi.model.{Board, Position}
-import nightra.reversi.ui.{BoardUI, GameUI}
+import nightra.reversi.ui.game.BoardUI
 import org.abego.treelayout.util.{DefaultConfiguration, DefaultTreeForTreeLayout}
 import org.abego.treelayout.{NodeExtentProvider, TreeForTreeLayout, TreeLayout}
 
@@ -71,8 +71,8 @@ object TreeUI extends JFXApp {
         }
         val label: Text = new Text(board.heuristic.toInt.toString)
         new StackPane {
-          layoutX = rectangle.x + 10
-          layoutY = rectangle.y + 10
+          layoutX = rectangle.x
+          layoutY = rectangle.y
           content = List(rect, label)
           onMouseClicked = () => {
             new Stage() {
@@ -87,7 +87,7 @@ object TreeUI extends JFXApp {
       val rectRoot = layout.getNodeBounds.get(root)
       val children = layoutTree.getChildrenList(root).asScala
       val rectChildren = children.map(layout.getNodeBounds.get(_))
-      val lines = rectChildren.map(rect => Line(rectRoot.getCenterX + 10, rectRoot.getCenterY + 10, rect.getCenterX + 10, rect.getCenterY + 10))
+      val lines = rectChildren.map(rect => Line(rectRoot.getCenterX, rectRoot.getCenterY, rect.getCenterX, rect.getCenterY))
       lines.toVector ++ children.flatMap(computeEdges)
     }
     val rectangles = computeRectangles()
@@ -96,7 +96,8 @@ object TreeUI extends JFXApp {
     root = new Pane {
       prefWidth = layout.getBounds.getWidth + 20
       prefHeight = layout.getBounds.getHeight + 20
-      padding = Insets(10)
+      translateX = 20
+      translateY = 20 // padding
       content = edges ++ rectangles
     }
 

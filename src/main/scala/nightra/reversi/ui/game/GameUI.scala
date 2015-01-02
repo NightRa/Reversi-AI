@@ -1,22 +1,23 @@
-package nightra.reversi.ui
+package nightra.reversi.ui.game
 
-import nightra.reversi.ai.tree.TreeMinimax
+import nightra.reversi.ai.ReversiAI.AI
+import nightra.reversi.ai._
+import nightra.reversi.ai.tree.TreeAI
+import nightra.reversi.model._
+import nightra.reversi.util.JavaFXUtil._
 
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.Scene
-import scalafx.scene.layout.AnchorPane
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
 
-import nightra.reversi.ai.AlphaBeta
-import nightra.reversi.model._
-import nightra.reversi.util.JavaFXUtil._
-
 class GameUI(boardSize: Int) extends Scene(600, 600) {
 
+  val ai: AI = ReversiAI.Imperative.alphaBeta(5)
+
   val boardProp: ObjectProperty[Board] = ObjectProperty(Board.initialBoard(boardSize))
-  val winner: ObjectProperty[Option[Player]] = mapProp(boardProp)(_.winner)
+  val winner: ObjectProperty[Option[Player]] = mapProp(boardProp)(_.winner, "winner")
 
   winner.onChange((_, _, _) => winner.value match {
     case None => ()
@@ -24,7 +25,7 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
   })
 
   def moved(move: Move): Unit = {
-    if(boardProp.value.turn == Black){
+    if (boardProp.value.turn == Black) {
       boardProp.value.move(move) match {
         case None => ()
         case Some(newBoard) =>
@@ -33,28 +34,16 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
     }
   }
 
-  def aiAsync(board: Board): Task[(Board, Move, Float)] = {
-    treeAI(board, 4)
-  }
-
-  def imperativeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
-    val aiTask = Task.delay(AlphaBeta.reversiAlphaBeta(board,depth))
+  def aiAsync(ai: AI, board: Board): Task[(Board, Move, Float)] = {
+    val aiTask = Task.delay(ai(board))
     Task.fork(aiTask.flatMap {
       case (score, None) => Task.fail(new IllegalStateException("No move for the AI."))
-      case (score, Some((move,newBoard))) => Task.now((newBoard, move, score))
-    })
-  }
-
-  def treeAI(board: Board, depth: Int): Task[(Board,Move,Float)] = {
-    val aiTask = Task.delay(TreeMinimax.reversiMinimax(board, depth))
-    Task.fork(aiTask.flatMap {
-      case (score,None) => Task.fail(new IllegalStateException("No move for the AI."))
       case (score, Some((move, newBoard))) => Task.now((newBoard, move, score))
     })
   }
 
-  def runAILog(board: Board): Unit = aiAsync(board).runAsync {
-    case -\/(exception) => ()
+  def runAILog(ai: AI, board: Board): Unit = aiAsync(ai, board).runAsync {
+    case -\/(exception) => System.err.println(exception)
     case \/-((newBoard, move, score)) =>
       Platform.runLater {
         println(s"The computer moved to $move")
@@ -73,7 +62,7 @@ class GameUI(boardSize: Int) extends Scene(600, 600) {
       }
     case White =>
       boardProp.value = board
-      runAILog(board)
+      runAILog(ai,board)
   }
 
   def clickSquare(pos: Position): Unit = {

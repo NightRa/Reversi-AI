@@ -1,4 +1,4 @@
-package nightra.reversi.ui
+package nightra.reversi.ui.game
 
 import nightra.reversi.model._
 import nightra.reversi.util.JavaFXUtil._
@@ -7,7 +7,7 @@ import scalafx.beans.property.ObjectProperty
 import scalafx.scene.layout.{AnchorPane, GridPane, StackPane}
 
 class BoardUI(boardProp: ObjectProperty[Board], boardSize: Int, squareClicked: Position => Unit) extends AnchorPane {
-  val tiles: ObjectProperty[Vector[Vector[SquareState]]] = mapProp(boardProp)(_.mobilityBoard)
+  val tiles: ObjectProperty[Vector[Vector[SquareState]]] = mapProp(boardProp)(_.mobilityBoard, "tiles")
 
   val reversiTiles: GridPane = {
     val board = new GridPane
@@ -22,7 +22,7 @@ class BoardUI(boardProp: ObjectProperty[Board], boardSize: Int, squareClicked: P
         () => {
           // tiles.value = boardProp.value.mobilityBoard
         },
-        mapProp(tiles)(states => states(i)(j)))
+        mapProp(tiles)(states => states(i)(j), "square"))
       board.add(square, j, i)
     }
     board

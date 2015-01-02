@@ -11,9 +11,31 @@ resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 // Kind projector! Yay!
 addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.1.0"
+assemblyJarName in assembly := "Reversi.jar"
 
-libraryDependencies += "org.specs2" %% "specs2-scalacheck" % "2.4.13"
+mainClass in assembly := Some("nightra.reversi.ui.UI")
+
+proguardSettings
+
+ProguardKeys.proguardVersion in Proguard := "5.0"
+
+ProguardKeys.options in Proguard ++= Seq("-dontnote", "-dontwarn", "-ignorewarnings")
+
+ProguardKeys.options in Proguard += ProguardOptions.keepMain("nightra.reversi.ui.UI")
+
+net.virtualvoid.sbt.graph.Plugin.graphSettings
+
+javaOptions in (Proguard, proguard) := Seq("-Xms2G","-Xmx2G")
+
+libraryDependencies += ("org.scalaz" %% "scalaz-core" % "7.1.0"
+                          exclude("org.scala-lang.modules", "scala-parser-combinators_2.11")
+                          exclude("org.scala-lang.modules", "scala-xml_2.11"))
+
+libraryDependencies += "org.scalaz" %% "scalaz-effect" % "7.1.0"
+
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.1.0"
+
+libraryDependencies += "org.specs2" %% "specs2-scalacheck" % "2.4.13" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.6" % "test"
 

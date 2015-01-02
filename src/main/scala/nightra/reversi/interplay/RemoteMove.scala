@@ -1,5 +1,6 @@
 package nightra.reversi.interplay
 
-import nightra.reversi.model.{Position, Player}
+import nightra.reversi.model.Position
+import nightra.reversi.model
 
-case class RemoteMove(player: Player, position: Position)
+case class RemoteMove(player: model.Player, position: Position)
