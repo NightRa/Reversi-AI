@@ -21,7 +21,7 @@ object RemoteComputer {
     case _ => None
   }
 
-  def parseRemoteMove(s: String): Option[RemoteMove] = s.lines.map(_.trim).toList match {
+  def parseRemoteMove(s: String): Option[RemoteMove] = s.trim.lines.map(_.trim).toList match {
     case List(playerString, positionString) => (parsePlayer(playerString) |@| parsePosition(positionString))(RemoteMove)
     case _ => None
   }
