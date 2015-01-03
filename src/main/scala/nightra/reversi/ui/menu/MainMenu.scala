@@ -175,7 +175,7 @@ object ChoosePlayerPanel {
         right = chooseFileButton
       })
     }
-    val remotePlayer = mapProp[File, interplay.Player](file)(RemoteComputerPlayer, "remotePlayer")
+    val remotePlayer = mapProp[File, interplay.Player](file)(file => RemoteComputerPlayer(file.toPath), "remotePlayer")
     (containerNode, remotePlayer)
   }
 

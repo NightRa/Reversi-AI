@@ -25,4 +25,11 @@ object RemoteComputer {
     case List(playerString, positionString) => (parsePlayer(playerString) |@| parsePosition(positionString))(RemoteMove)
     case _ => None
   }
+
+  def showRemoteMove(remoteMove: RemoteMove): String = remoteMove.player.toString + "\r\n" + showMove(remoteMove.move)
+
+  def showMove(move: Move): String = move match{
+    case Pass => "-1, -1"
+    case Place(Position(row,col)) => s"$row, $col"
+  }
 }

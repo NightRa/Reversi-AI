@@ -1,6 +1,7 @@
 package nightra.reversi.interplay
 
 import java.io.File
+import java.nio.file.Path
 
 // Int x PlayerType x PlayerType
 /*size >= 4 && size is even.*/
@@ -9,7 +10,7 @@ case class GameType(boardSize: Int, blackPlayer: Player, whitePlayer: Player)
 sealed trait Player
 case object HumanPlayer extends Player
 case class LocalComputerPlayer(ai: AIType) extends Player
-case class RemoteComputerPlayer(file: File) extends Player
+case class RemoteComputerPlayer(file: Path) extends Player
 
 // 2 + AIType
 sealed trait PlayerType

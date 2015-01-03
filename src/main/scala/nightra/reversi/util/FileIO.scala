@@ -11,7 +11,7 @@ import scalaz.syntax.apply._
 object FileIO {
 
   def waitForChange(file: Path): Task[String] = Task {
-    val dir = file.getParent
+    val dir = file.toAbsolutePath.getParent
     val watcher = dir.getFileSystem.newWatchService()
     val key = dir.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY)
     val waitKey = watcher.take()
@@ -22,7 +22,7 @@ object FileIO {
       events = waitKey.pollEvents()
     }
 
-    val newContent = Source.fromFile(file.toFile).mkString
+    val newContent = Source.fromFile(file.toAbsolutePath.toFile).mkString
 
     waitKey.cancel()
     key.cancel()
@@ -32,16 +32,16 @@ object FileIO {
   }
 
   def writeFile(file: Path, content: String): Task[Unit] =
-    createFile(file) *>
+    createFile(file.toAbsolutePath) *>
       Task.delay {
-        val writer = new PrintWriter(file.toFile, "UTF-8")
+        val writer = new PrintWriter(file.toAbsolutePath.toFile, "UTF-8")
         writer.write(content)
         writer.close()
       }
 
   def createFile(file: Path): Task[Unit] = Task.delay {
-    Files.createDirectories(file.getParent)
-    try Files.createFile(file)
+    Files.createDirectories(file.toAbsolutePath.getParent)
+    try Files.createFile(file.toAbsolutePath)
     catch {
       case e: FileAlreadyExistsException => ()
     }
