@@ -3,49 +3,45 @@ package nightra.reversi.ai
 import nightra.reversi.model.{Move, Board}
 
 object AlphaBeta {
-  def alphaBeta[Board, Move](state: Board)(heuristic: Board => Float)(generator: Board => Stream[Move])(toBoard: Move => Board)(terminal: Board => Boolean)(max: Board => Boolean)(depth: Int): (Float, Option[Move]) = {
-    // Returns none if bestMin <= bestMax, depth is 0, or the state is terminal.
-    def go(state: Board, alpha: Float, beta: Float, depth: Int): (Float, Option[Move]) = {
-      if (depth == 0 || terminal(state)) {
-        (heuristic(state), None)
-      } else {
-        val possibleMoves: Stream[Move] = generator(state)
-        // !possibleMoves.isEmpty
-        // god forgive me...
-        // Out of time for the homework T_T
-        var alpha2 = alpha
-        var beta2 = beta
-        if (max(state)) {
-          var bestMove: Option[Move] = None
-          for (child <- possibleMoves) {
-            val childValue = go(toBoard(child), alpha2, beta2, depth - 1)._1
-            if (childValue > alpha2) {
-              alpha2 = childValue
-              bestMove = Some(child)
-            }
-            if (beta2 <= alpha2)
-              return (alpha2, bestMove)
-          }
-          (alpha2, bestMove)
-        } else {
-          var bestMove: Option[Move] = None
-          for (child <- possibleMoves) {
-            val childValue = go(toBoard(child), alpha2, beta2, depth - 1)._1
-            if (childValue < beta2) {
-              beta2 = childValue
-              bestMove = Some(child)
-            }
-            if (beta2 <= alpha2)
-              return (beta2, bestMove)
-          }
-          (beta2, bestMove)
-        }
+  def reversiAlphaBeta(board: Board, depth: Int): (Float, Option[(Move, Board)]) =
+    alphaBeta(board, depth, Float.NegativeInfinity, Float.PositiveInfinity)
+
+  def maximize(children: => Stream[(Move, Board)], alpha: Float, beta: Float, eval: (Board, Float, Float) => Float): (Float, (Move, Board)) = {
+    def goMaximize(children: Stream[(Move, Board)], max: (Move, Board), alpha: Float, beta: Float): (Float, (Move, Board)) = {
+      if (beta <= alpha || children.isEmpty) (alpha, max)
+      else {
+        val (moveChild, child) = children.head
+        val evalChild = eval(child, alpha, beta)
+        if (evalChild > alpha) goMaximize(children.tail, (moveChild, child), evalChild, beta)
+        else goMaximize(children.tail, max, alpha, beta)
       }
     }
-
-    go(state, alpha = Float.NegativeInfinity, beta = Float.PositiveInfinity, depth)
+    goMaximize(children.tail, children.head, alpha, beta)
   }
 
-  def reversiAlphaBeta(board: Board, depth: Int): (Float, Option[(Move, Board)]) =
-    alphaBeta(board)(_.heuristic)(_.possibleMoves)(_._2)(_.isTerminal)(_.turn.isMax)(depth)
+  def minimize(children: => Stream[(Move, Board)], alpha: Float, beta: Float, eval: (Board, Float, Float) => Float): (Float, (Move, Board)) = {
+    def goMinimize(children: Stream[(Move, Board)], min: (Move, Board), alpha: Float, beta: Float): (Float, (Move, Board)) = {
+      if (beta <= alpha || children.isEmpty) (beta, min)
+      else {
+        val (moveChild, child) = children.head
+        val evalChild = eval(child, alpha, beta)
+        if (evalChild < beta) goMinimize(children.tail, (moveChild, child), alpha, evalChild)
+        else goMinimize(children.tail, min, alpha, beta)
+      }
+    }
+    goMinimize(children.tail, children.head, alpha, beta)
+  }
+
+  def alphaBeta(board: Board, depth: Int, _alpha: Float, _beta: Float): (Float, Option[(Move, Board)]) = {
+    if (depth == 0 || board.isTerminal) {
+      (board.heuristic, None)
+    } else if (board.turn.isMax) {
+      val (alpha2, (move, newBoard)) = maximize(board.possibleMoves, _alpha, _beta, (child, alpha, beta) => alphaBeta(child, depth - 1, alpha, beta)._1)
+      (alpha2, Some((move, newBoard)))
+    } else {
+      // turn is min.
+      val (beta2, (move, newBoard)) = minimize(board.possibleMoves, _alpha, _beta, (child, alpha, beta) => alphaBeta(child, depth - 1, alpha, beta)._1)
+      (beta2, Some((move, newBoard)))
+    }
+  }
 }

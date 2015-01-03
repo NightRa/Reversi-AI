@@ -38,7 +38,6 @@ class MainMenu(play: GameType => Unit, stage: Stage) extends Scene(600, 400) {
     styleClass += "playButton"
   }
   playButton.onMouseClicked = () => {
-    println(gameType.value)
     play(gameType.value)
   }
 
