@@ -13,4 +13,9 @@ object GameTree {
     tree =>
       if (depth == 0) node(tree.rootLabel, Stream.Empty)
       else node(tree.rootLabel, tree.subForest.map(prune(depth - 1)))
+
+  def pruneWithHeight[A](depth: Int): Tree[A] => Tree[(A, Int)] =
+    tree =>
+      if (depth == 0) node((tree.rootLabel,depth), Stream.Empty)
+      else node((tree.rootLabel, depth), tree.subForest.map(pruneWithHeight(depth - 1)))
 }

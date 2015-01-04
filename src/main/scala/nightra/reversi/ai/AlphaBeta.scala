@@ -7,29 +7,30 @@ object AlphaBeta {
     alphaBeta(board, depth, Float.NegativeInfinity, Float.PositiveInfinity)
 
   def maximize(children: => Stream[(Move, Board)], alpha: Float, beta: Float, eval: (Board, Float, Float) => Float): (Float, (Move, Board)) = {
-    def goMaximize(children: Stream[(Move, Board)], max: (Move, Board), alpha: Float, beta: Float): (Float, (Move, Board)) = {
+    def goMaximize(children: Stream[(Move, Board)], max: (Move, Board), alpha: Float): (Float, (Move, Board)) = {
       if (beta <= alpha || children.isEmpty) (alpha, max)
       else {
         val (moveChild, child) = children.head
         val evalChild = eval(child, alpha, beta)
-        if (evalChild > alpha) goMaximize(children.tail, (moveChild, child), evalChild, beta)
-        else goMaximize(children.tail, max, alpha, beta)
+        if (evalChild > alpha) goMaximize(children.tail, (moveChild, child), evalChild)
+        else goMaximize(children.tail, max, alpha)
       }
     }
-    goMaximize(children.tail, children.head, alpha, beta)
+    val res = goMaximize(children.tail, children.head, eval(children.head._2, alpha, beta) max alpha)
+    res
   }
 
   def minimize(children: => Stream[(Move, Board)], alpha: Float, beta: Float, eval: (Board, Float, Float) => Float): (Float, (Move, Board)) = {
-    def goMinimize(children: Stream[(Move, Board)], min: (Move, Board), alpha: Float, beta: Float): (Float, (Move, Board)) = {
+    def goMinimize(children: Stream[(Move, Board)], min: (Move, Board), beta: Float): (Float, (Move, Board)) = {
       if (beta <= alpha || children.isEmpty) (beta, min)
       else {
         val (moveChild, child) = children.head
         val evalChild = eval(child, alpha, beta)
-        if (evalChild < beta) goMinimize(children.tail, (moveChild, child), alpha, evalChild)
-        else goMinimize(children.tail, min, alpha, beta)
+        if (evalChild < beta) goMinimize(children.tail, (moveChild, child), evalChild)
+        else goMinimize(children.tail, min, beta)
       }
     }
-    goMinimize(children.tail, children.head, alpha, beta)
+    goMinimize(children.tail, children.head, eval(children.head._2, alpha, beta) min beta)
   }
 
   def alphaBeta(board: Board, depth: Int, _alpha: Float, _beta: Float): (Float, Option[(Move, Board)]) = {
