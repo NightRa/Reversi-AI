@@ -2,33 +2,41 @@ package nightra.reversi.util
 
 import java.io.PrintWriter
 import java.nio.file._
+import java.util.{TimerTask, Timer}
+
+import nightra.reversi.control.Controller._
+import nightra.reversi.control.{InvalidRemoteFormat, InternalError, ExecutionError}
 
 import scala.collection.JavaConverters._
 import scala.io.Source
-import scalaz.concurrent.Task
+import scalaz.{\/, \/-, -\/}
+import scalaz.concurrent.{Future, Task}
 import scalaz.syntax.apply._
 
 object FileIO {
 
-  def waitForChange(file: Path): Task[String] = Task {
-    val dir = file.toAbsolutePath.getParent
-    val watcher = dir.getFileSystem.newWatchService()
-    val key = dir.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY)
-    val waitKey = watcher.take()
+  def poll[A](task: PlayResult[Option[A]], delayMillis: Int): PlayResult[A] = playResult(Future.async {
+    callback =>
+      val timer = new Timer(true) // Daemon thread.
 
-    var events = waitKey.pollEvents()
-    while (!events.asScala.map(_.context.asInstanceOf[Path].toAbsolutePath).contains(file.toAbsolutePath)) {
-      waitKey.reset()
-      events = waitKey.pollEvents()
-    }
+      timer.scheduleAtFixedRate(new TimerTask {
+        def run(): Unit = task.run.runAsync {
+          case -\/(e@InternalError(_)) =>
+            timer.cancel()
+            callback(-\/(e))
+          case -\/(InvalidRemoteFormat(_)) => ()
+          case -\/(e) =>
+            System.err.println(s"Error: $e")
+          case \/-(None) => () // Continue to run every @delayMillis
+          case \/-(Some(a)) =>
+            timer.cancel()
+            callback(\/-(a))
+        }
+      }, 0, delayMillis)
+  })
 
-    val newContent = Source.fromFile(file.toAbsolutePath.toFile).mkString
-
-    waitKey.cancel()
-    key.cancel()
-    watcher.close()
-
-    newContent
+  def readFile(file: Path): Task[String] = Task.delay {
+    Source.fromFile(file.toAbsolutePath.toFile).mkString
   }
 
   def writeFile(file: Path, content: String): Task[Unit] =

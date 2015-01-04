@@ -15,6 +15,8 @@ assemblyJarName in assembly := "Reversi.jar"
 
 mainClass in assembly := Some("nightra.reversi.ui.UI")
 
+test in assembly := {}
+
 proguardSettings
 
 ProguardKeys.proguardVersion in Proguard := "5.0"

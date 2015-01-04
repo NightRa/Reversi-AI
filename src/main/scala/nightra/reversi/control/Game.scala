@@ -12,6 +12,7 @@ import nightra.reversi.util.FileIO
 import nightra.reversi.util
 import nightra.reversi.control.Controller._
 import scalafx.application.Platform
+import scalaz.concurrent.Task
 import scalaz.{Applicative, \/-, -\/}
 import scalaz.syntax.applicative._
 
@@ -19,6 +20,7 @@ object Game {
   def startGame(gameType: GameType, gameUI: GameUI): Unit = {
     val blackPlayerRunner = playerRunner(gameType.blackPlayer, gameUI)
     val whitePlayerRunner = playerRunner(gameType.whitePlayer, gameUI)
+    clearFileState(gameType.blackPlayer, gameType.whitePlayer).run
     runGame(blackPlayerRunner, whitePlayerRunner, gameType, gameUI.boardProp.value, gameUI)
   }
 
@@ -79,5 +81,14 @@ object Game {
     taskToPlayResult(
       FileIO.writeFile(file, util.RemoteComputer.showRemoteMove(remoteMove))
     )
+
+  def clearFile(file: Path): Task[Unit] =
+    FileIO.writeFile(file, "")
+
+  def clearFileState(black: interplay.Player, white: interplay.Player): Task[Unit] = (black, white) match{
+    case (RemoteComputerPlayer(file), _) => clearFile(file)
+    case (_, RemoteComputerPlayer(file)) => clearFile(file)
+    case (_, _) => Task.now(())
+  }
 
 }
