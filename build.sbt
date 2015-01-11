@@ -47,6 +47,8 @@ libraryDependencies += "org.typelevel" %% "scalaz-specs2" % "0.3.0" % "test"
 
 libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.20-R6"
 
+libraryDependencies += "org.controlsfx" % "controlsfx" % "8.20.8"
+
 // libraryDependencies += "org.reactfx" % "reactfx" % "1.4.1"
 
 // libraryDependencies += "org.fxmisc.easybind" % "easybind" % "1.0.3"

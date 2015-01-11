@@ -1,11 +1,17 @@
 package nightra.reversi.util
 
+import java.util.Optional
+
 trait UnfoldStep[+A]
 case class More[+A](a: A) extends UnfoldStep[A]
 case object Done extends UnfoldStep[Nothing]
 case object Terminate extends UnfoldStep[Nothing]
 
 object Collections {
+  def toOption[A](optional: Optional[A]): Option[A] =
+    if(optional.isPresent) Some(optional.get())
+    else None
+
   // For square matrices
   // Some iff mat1.size == mat2.size
   def zipWith[A, B, C](mat1: Vector[Vector[A]], mat2: Vector[Vector[B]])(f: (A, B) => C): Option[Vector[Vector[C]]] =

@@ -1,34 +1,52 @@
 package nightra.reversi.ui.game
 
-import nightra.reversi.ai.ReversiAI.AI
-import nightra.reversi.ai._
-import nightra.reversi.control.{InternalError, ExecutionError}
+import javafx.scene.control.{ButtonType, Alert}
+import javafx.scene.control.Alert.AlertType
+import javafx.stage.Modality
+
+import nightra.reversi.control.{ExecutionError, InternalError}
 import nightra.reversi.model._
-import nightra.reversi.util.JavaFXUtil._
+import nightra.reversi.util.Collections.toOption
 
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.Scene
 import scalaz.concurrent.Future
 
-class GameUI(boardSize: Int) extends Scene(600, 600) {
-  val ai: AI = ReversiAI.Imperative.alphaBeta(5)
-
+class GameUI(boardSize: Int, returnToMainMenu: () => Unit) extends Scene(600, 600) {
   val boardProp: ObjectProperty[Board] = ObjectProperty(Board.initialBoard(boardSize))
-  // val winner: ObjectProperty[Option[Player]] = mapProp(boardProp)(_.winner, "winner")
 
   var playCallback: Option[Position => Unit] = None
 
   val play: Future[Position] =
     Future.async[Position] {
       callback =>
-        Platform.runLater{
+        Platform.runLater {
           playCallback = Some(callback)
         }
     }
 
-  def reportWinner(winner: Player): Unit = {
+  def reportWinner(winner: Player, blacks: Int, whites: Int): Unit = {
     println(s"The winner is: $winner")
+    val alert = new Alert(AlertType.CONFIRMATION)
+    alert.setTitle("The game ended")
+    alert.setHeaderText(winningMessage(winner, blacks, whites))
+    alert.setContentText("Do you want to return to the main menu?")
+    alert.getButtonTypes.setAll(ButtonType.YES, ButtonType.NO)
+    alert.initModality(Modality.NONE)
+    val res = toOption(alert.showAndWait())
+    res match {
+      case Some(ButtonType.YES) => returnToMainMenu()
+      case _ => ()
+    }
+  }
+
+  def winningMessage(winner: Player, blacks: Int, whites: Int): String = {
+    val score = winner match {
+      case Black => s"$blacks-$whites"
+      case White => s"$whites-$blacks"
+    }
+    s"$winner won $score"
   }
 
   def reportError(error: ExecutionError): Unit = error match {

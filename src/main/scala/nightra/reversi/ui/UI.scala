@@ -10,14 +10,20 @@ import scalaz.concurrent.Future
 
 object UI extends JFXApp {
 
+  def mainMenu(): MainMenu = {
+    new MainMenu(gameType => {
+      val gameUI = new GameUI(gameType.boardSize, () => {
+        stage.scene = mainMenu()
+      })
+      stage.scene = gameUI
+      Future(Game.startGame(gameType, gameUI)).runAsync(_ => ())
+    }, stage)
+  }
+
   stage = new PrimaryStage {
     stage =>
     title = "Reversi AI"
-    scene = new MainMenu(gameType => {
-      val gameUI = new GameUI(gameType.boardSize)
-      scene = gameUI
-      Future(Game.startGame(gameType, gameUI)).runAsync(_ => ())
-    }, stage)
+    scene = mainMenu()
   }
 
 }
