@@ -27,8 +27,8 @@ object Game {
   def runGame(blackPlayerRunner: PlayerRunner[_], whitePlayerRunner: PlayerRunner[_], gameType: GameType, board: Board, gameUI: GameUI): Unit = {
     val currentPlayer = board.turn
     board.winner match {
-      case Some(winner) => Platform.runLater {
-        gameUI.reportWinner(winner, board.blacks, board.whites)
+      case Some(endGame) => Platform.runLater {
+        gameUI.reportWinner(endGame, board.blacks, board.whites)
       }
       case None =>
         val playInstructions = currentPlayer match {

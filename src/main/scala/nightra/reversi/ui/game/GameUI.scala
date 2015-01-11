@@ -26,11 +26,11 @@ class GameUI(boardSize: Int, returnToMainMenu: () => Unit) extends Scene(600, 60
         }
     }
 
-  def reportWinner(winner: Player, blacks: Int, whites: Int): Unit = {
-    println(s"The winner is: $winner")
+  def reportWinner(endGame: EndGame, blacks: Int, whites: Int): Unit = {
+    println(s"The winner is: $endGame")
     val alert = new Alert(AlertType.CONFIRMATION)
     alert.setTitle("The game ended")
-    alert.setHeaderText(winningMessage(winner, blacks, whites))
+    alert.setHeaderText(winningMessage(endGame, blacks, whites))
     alert.setContentText("Do you want to return to the main menu?")
     alert.getButtonTypes.setAll(ButtonType.YES, ButtonType.NO)
     alert.initModality(Modality.NONE)
@@ -41,12 +41,14 @@ class GameUI(boardSize: Int, returnToMainMenu: () => Unit) extends Scene(600, 60
     }
   }
 
-  def winningMessage(winner: Player, blacks: Int, whites: Int): String = {
-    val score = winner match {
-      case Black => s"$blacks-$whites"
-      case White => s"$whites-$blacks"
-    }
-    s"$winner won $score"
+  def winningMessage(endGame: EndGame, blacks: Int, whites: Int): String = endGame match {
+    case Winner(winner) =>
+      val score = winner match {
+        case Black => s"$blacks-$whites"
+        case White => s"$whites-$blacks"
+      }
+      s"$winner won $score"
+    case Tie => s"Tie $blacks-$whites"  
   }
 
   def reportError(error: ExecutionError): Unit = error match {

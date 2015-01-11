@@ -26,8 +26,9 @@ object Heuristic {
     if (board.isTerminal) {
       board.winner match {
         case None => 0f
-        case Some(Black) => Float.PositiveInfinity
-        case Some(White) => Float.NegativeInfinity
+        case Some(Tie) => 0f
+        case Some(Winner(Black)) => Float.PositiveInfinity
+        case Some(Winner(White)) => Float.NegativeInfinity
       }
     } else {
       (countHeuristic(board) + mobilityHeuristic(board) + cornersHeuristic(board)) / 3

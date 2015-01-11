@@ -70,6 +70,10 @@ object Piece {
   }
 }
 
+sealed trait EndGame
+case class Winner(player: Player) extends EndGame
+case object Tie extends EndGame
+
 // ---------------------------------------------
 
 case class Position(row: Int, column: Int) {

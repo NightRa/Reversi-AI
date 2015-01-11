@@ -123,15 +123,15 @@ case class Board private[model](mat: Vector[Vector[Piece]], size: Int, blacks: I
     pieces == size * size || possibleMoves.isEmpty
   }
 
-  def winner: Option[Player] =
+  def winner: Option[EndGame] =
     if (!isTerminal) None
     else {
       if (blacks > whites)
-        Some(Black)
+        Some(Winner(Black))
       else if (whites > blacks)
-        Some(White)
+        Some(Winner(White))
       else
-        None
+        Some(Tie)
     }
 
 
@@ -188,8 +188,8 @@ object Board {
     // I really don't like placing preconditions.
     // I really want Dependant types please!!!! -- No one is really stopping me from using a dependently typed language..
     require(before.size == after.size, "placedPosition requires boards of equal sizes.")
-    if(before == after) None
-    else{
+    if (before == after) None
+    else {
       val posMaybe = streamFind(positions(before.size))(p => before.unsafeAt(p).isEmpty && !after.unsafeAt(p).isEmpty)
       //                                                           ^ p in positions(size) => inBounds(size) => safe
       Some(posMaybe.fold[Move](Pass)(Place))
