@@ -1,5 +1,6 @@
 package nightra.reversi.ai
 
+import nightra.reversi.ai.imperative.{AlphaBeta, Minimax}
 import nightra.reversi.ai.tree.{TreeAI, TreeMinimax}
 import nightra.reversi.model._
 import org.scalacheck.{Test, Gen}

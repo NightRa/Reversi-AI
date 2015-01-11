@@ -1,6 +1,6 @@
-package nightra.reversi.ai
+package nightra.reversi.ai.imperative
 
-import nightra.reversi.model.{Move, Board}
+import nightra.reversi.model.{Board, Move}
 
 object Minimax {
   // returns the calculated value of the state + the chosen move.

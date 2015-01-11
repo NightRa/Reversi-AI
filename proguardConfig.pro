@@ -16,3 +16,7 @@
 -keepclasseswithmembers public class nightra.reversi.ui.UI {
     public static void main(java.lang.String[]);
 }
+
+-keepclasseswithmembers public class nightra.reversi.ui.tree.TreeUI {
+    public static void main(java.lang.String[]);
+}

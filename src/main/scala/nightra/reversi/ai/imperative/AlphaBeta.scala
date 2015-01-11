@@ -1,6 +1,6 @@
-package nightra.reversi.ai
+package nightra.reversi.ai.imperative
 
-import nightra.reversi.model.{Move, Board}
+import nightra.reversi.model.{Board, Move}
 
 object AlphaBeta {
   def reversiAlphaBeta(board: Board, depth: Int): (Float, Option[(Move, Board)]) =
